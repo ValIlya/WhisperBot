@@ -1,7 +1,23 @@
-from whisper_cpp_python import Whisper
+from pathlib import Path
+from typing import Optional
 
-whisper = Whisper(model_path="./models/ggml-base.en.bin")
+from pywhispercpp.model import Model
 
-output = whisper.transcribe(open("samples/jfk.wav"))
+import whisperbot
 
-print(output)
+
+class Speech2Text:
+    def __init__(
+        self, model: str = "ggml-base.bin", models_dir: Optional[Path] = None
+    ) -> None:
+        self.models_dir = models_dir or Path(whisperbot.__file__).parent / "models"
+        self.model = Model(
+            str(self.models_dir / model), models_dir=str(self.models_dir), n_threads=6
+        )
+
+    def transcribe(self, audio: str) -> str:
+        out = []
+        segments = self.model.transcribe(audio)
+        for segment in segments:
+            out.append(segment.text)
+        return "".join(out)

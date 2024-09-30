@@ -1,5 +1,7 @@
 from typing import List
+
 from mistralai import Mistral
+
 from whisperbot.models import Message
 
 

@@ -9,12 +9,16 @@ poetry install
 Fill up env variables  
 Run bot via
 ```bash
-whisperbot
+startbot
 ```
 
 ### TODO:
  - support audio parsing
+ - mark messages as deleted, but not delete
+ - markdown support for answers
  - async 
     - read-write to storage (Motor)
-    - llm chats
+    - llm chat
+ - suggests for bot commands
  - tests would be nice
+   - how to test telegram api?

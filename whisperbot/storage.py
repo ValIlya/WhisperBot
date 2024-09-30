@@ -1,5 +1,7 @@
 from typing import List
+
 from pymongo import MongoClient
+
 from whisperbot.models import Message, MessageCollection
 
 

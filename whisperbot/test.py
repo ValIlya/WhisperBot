@@ -1,4 +1,7 @@
-from whisperbot.chat import Message, Role
+from whisperbot.speech2text import Speech2Text
 
-
-print(Message.model_validate(dict(sender=Role.USER, text="test")).model_dump_json())
+model = Speech2Text()
+text = model.transcribe(
+    "whisperbot/AwACAgIAAxkBAAMnZvscDx2J_RR4adQehjte7iApAAH1AAKbVgACTdrgS8wZHJCc9PEkNgQ.wav"
+)
+print(text)
