@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "whisperbot"
+version = "0.1.0"
+description = ""
+authors = ["ValIlya <valyaev.ilya@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+whisper-cpp-python = "^0.2.0"
+python-telegram-bot = "^21.6"
+mistralai = "^1.1.0"
+pymongo = "^4.9.1"
+python-dotenv = "^1.0.1"
+pydantic = "^2.9.2"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.6.8"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+whisperbot = "whisperbot.bot:main"
