@@ -3,10 +3,11 @@ import os
 import traceback
 
 from dotenv import load_dotenv
-from telegram import File, Update
+from telegram import File, InlineKeyboardButton, InlineKeyboardMarkup, Update, Message as TMessage
 from telegram.constants import ParseMode
 from telegram.ext import (
     Application,
+    CallbackQueryHandler,
     CommandHandler,
     ContextTypes,
     MessageHandler,
@@ -14,7 +15,8 @@ from telegram.ext import (
 )
 
 from whisperbot.chat import Chat, Role
-from whisperbot.models import Message
+from whisperbot.models import Message, UserData
+from whisperbot.speech2text import Speech2Text
 from whisperbot.storage import Storage
 from whisperbot.text_split import split
 
@@ -30,6 +32,7 @@ storage = Storage(
 client = Chat(token=os.getenv("MISTAL_API_KEY"))
 app = Application.builder().token(os.getenv("TELEGRAM_TOKEN")).build()
 DEVELOPER_CHAT_ID = os.getenv("DEVELOPER_CHAT_ID")
+speech2text = Speech2Text()
 
 
 logging.basicConfig(
@@ -39,25 +42,47 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.message.chat_id
-    message = Message(sender=Role.USER, text=update.message.text)
+async def _answer(message: TMessage, context: ContextTypes.DEFAULT_TYPE):
+    save_data = Message(sender=Role.USER, text=message.text)
 
-    history = storage.get_messages(chat_id) + [message]
-    storage.append_message(chat_id, message)
+    history = storage.get_messages(message.chat_id) + [save_data]
+    storage.append_message(message.chat_id, save_data)
 
     reply = client.reply(messages=history)
 
-    storage.append_message(chat_id, Message(sender=Role.ASSISTANT, text=reply))
+    storage.append_message(message.chat_id, Message(sender=Role.ASSISTANT, text=reply))
 
     for text in split(reply):
-        await update.message.reply_text(text)
+        await message.reply_text(text=text)
+
+
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await _answer(message=update.message, context=context)
 
 
 async def get_voice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     new_file: File = await update.message.voice.get_file()
-    await new_file.download_to_drive(f"{update.message.voice.file_id}.ogg")
-    await update.message.reply_text("Voice note saved")
+    language = storage.get_language(update.message.chat_id)
+    filename = f"{update.message.voice.file_id}.ogg"
+    await new_file.download_to_drive(filename)
+    text = speech2text.transcribe(filename, language)
+
+    delete = InlineKeyboardButton("Delete", callback_data='delete')
+    question = InlineKeyboardButton("Question", callback_data='question')
+
+    reply_markup = InlineKeyboardMarkup([[delete, question]])
+    
+    await update.message.reply_text(text, reply_markup=reply_markup)
+
+
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    await query.edit_message_reply_markup(reply_markup=None)
+    if query.data == 'delete':
+        return
+    await _answer(message=query.message, context=context)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -81,12 +106,25 @@ async def clear_history(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Chat history cleared!")
 
 
+async def set_language(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.message.chat_id
+    if len(context.args) != 1:
+        await update.message.reply_text("Set language with `/setlanguage en` command")
+    language = context.args[0]
+    if language not in speech2text.get_available_languages():
+        languages = ', '.join(speech2text.get_available_languages())
+        await update.message.reply_text(f"Language {language} is not supported. Choose one from these: {languages}")
+    storage.set_language(chat_id, language)
+    await update.message.reply_text(f"Language is set to {language}!")
+
+
 async def post_init(application: Application) -> None:
     await application.bot.set_my_commands(
         [
             ("start", "Starts the bot"),
             ("help", "Helps a lot"),
             ("clearhistory", "Clears chat history and all llm context"),
+            ("setlanguage", f"Sets language, '{UserData(chat_id=0).language}' by default")
         ]
     )
 
@@ -110,6 +148,8 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help))
     app.add_handler(CommandHandler("clearhistory", clear_history))
+    app.add_handler(CommandHandler("setlanguage", set_language))
+    app.add_handler(CallbackQueryHandler(button_handler))
 
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(MessageHandler(filters.VOICE, get_voice))

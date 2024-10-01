@@ -13,9 +13,9 @@ startbot
 ```
 
 ### TODO:
- - support audio parsing
- - mark messages as deleted, but not delete
  - markdown support for answers
+   - strip unsupported characters
+ - don't save audio to disk
  - async 
     - read-write to storage (Motor)
     - llm chat

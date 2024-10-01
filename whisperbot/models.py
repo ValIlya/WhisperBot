@@ -10,8 +10,10 @@ class Message(BaseModel, extra="allow"):
     timestamp: datetime.datetime = Field(
         default_factory=lambda: datetime.datetime.now(datetime.UTC)
     )
+    deleted: bool = False
 
 
-class MessageCollection(BaseModel, extra="allow"):
+class UserData(BaseModel, extra="allow"):
     chat_id: int
     messages: List[Message] = []
+    language: str = 'auto'

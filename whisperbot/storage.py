@@ -2,7 +2,7 @@ from typing import List
 
 from pymongo import MongoClient
 
-from whisperbot.models import Message, MessageCollection
+from whisperbot.models import Message, UserData
 
 
 class Storage:
@@ -30,16 +30,43 @@ class Storage:
             upsert=True,
         )
 
-    def get_messages(self, chat_id: int, n: int = 0) -> List[Message]:
-        query = [{"chat_id": chat_id}]
-        if n > 0:
-            query.append({"messages": {"$slice": -n}})
-        chat = self.collection.find_one(*query)
+    def get_messages(self, chat_id: int) -> List[Message]:
+        chat = self.collection.find_one( 
+        {'chat_id': chat_id},
+        {
+            'chat_id': True,
+            'messages': {
+                '$elemMatch': {'deleted': False}, 
+            }
+        })
 
         if chat:
-            return MessageCollection.model_validate(chat).messages
+            return UserData.model_validate(chat).messages
         else:
             return []
 
     def delete_chat_history(self, chat_id: int):
-        self.collection.delete_one({"chat_id": chat_id})
+        self.collection.update_many(
+        {'chat_id': chat_id}, 
+        {
+            '$set': {'messages.$[].deleted': True} 
+        }
+    )
+
+    def set_language(self, chat_id: int, language: str):
+        self.collection.update_many(
+        {'chat_id': chat_id}, 
+        {
+            '$set': {'language': language} 
+        }
+    )
+        
+    def get_language(self, chat_id: int) -> str:
+        data = self.collection.find_one(
+        {'chat_id': chat_id}, 
+        {'chat_id': True, 'language': True}
+    )
+        if data:
+            return UserData.model_validate(data).language
+        else:
+            return UserData(chat_id=chat_id).language
