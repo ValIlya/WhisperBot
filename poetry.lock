@@ -296,6 +296,17 @@ files = [
 ]
 
 [[package]]
+name = "mistletoe"
+version = "1.4.0"
+description = "A fast, extensible Markdown parser in pure Python."
+optional = false
+python-versions = "~=3.5"
+files = [
+    {file = "mistletoe-1.4.0-py3-none-any.whl", hash = "sha256:44a477803861de1237ba22e375c6b617690a31d2902b47279d1f8f7ed498a794"},
+    {file = "mistletoe-1.4.0.tar.gz", hash = "sha256:1630f906e5e4bbe66fdeb4d29d277e2ea515d642bb18a9b49b136361a9818c9d"},
+]
+
+[[package]]
 name = "mistralai"
 version = "1.1.0"
 description = "Python Client SDK for the Mistral AI API."
@@ -641,6 +652,31 @@ test = ["pytest (>=8.2)", "pytest-asyncio (>=0.24.0)"]
 zstd = ["zstandard"]
 
 [[package]]
+name = "pytelegrambotapi"
+version = "4.23.0"
+description = "Python Telegram bot api."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "pytelegrambotapi-4.23.0-py3-none-any.whl", hash = "sha256:4fd4a64f3d5ec389270cf4f1eacd68f6d25d199e1048b76a1caefcb17fbe214b"},
+    {file = "pytelegrambotapi-4.23.0.tar.gz", hash = "sha256:ced74787cfaf59d959799786f12a401cdb3abeb58dcd25568fc91363ba1cccfa"},
+]
+
+[package.dependencies]
+requests = "*"
+
+[package.extras]
+aiohttp = ["aiohttp"]
+coloredlogs = ["coloredlogs"]
+fastapi = ["fastapi"]
+json = ["ujson"]
+pil = ["pillow"]
+psutil = ["psutil"]
+redis = ["redis (>=3.4.1)"]
+uvicorn = ["uvicorn"]
+watchdog = ["watchdog"]
+
+[[package]]
 name = "pytest"
 version = "8.3.3"
 description = "pytest: simple powerful testing with Python"
@@ -858,6 +894,21 @@ files = [
 ]
 
 [[package]]
+name = "telegramify-markdown"
+version = "0.1.13"
+description = "Convert Markdown to a format usable by Telegram."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "telegramify_markdown-0.1.13-py3-none-any.whl", hash = "sha256:398a083101145e60eb926c351ee4e4be249ed0311999f8e732f21993bfd064ee"},
+    {file = "telegramify_markdown-0.1.13.tar.gz", hash = "sha256:60ce24260ae91b7b99db26ea2fd4f2b297b15c33614757538fcf98bb2d5701b4"},
+]
+
+[package.dependencies]
+mistletoe = "1.4.0"
+pytelegrambotapi = ">=4.22.0"
+
+[[package]]
 name = "tomli"
 version = "2.0.1"
 description = "A lil' TOML parser"
@@ -934,4 +985,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "38fede6148ea12efc1bb6f16c3e6a1e27207e1ffd2acba280f04c4e939809a74"
+content-hash = "212bcf8a1a831658074fddbaa9a3469d17fcf40cea31f21d543f4e895c71601a"

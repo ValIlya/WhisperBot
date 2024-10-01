@@ -31,14 +31,15 @@ class Storage:
         )
 
     def get_messages(self, chat_id: int) -> List[Message]:
-        chat = self.collection.find_one( 
-        {'chat_id': chat_id},
-        {
-            'chat_id': True,
-            'messages': {
-                '$elemMatch': {'deleted': False}, 
-            }
-        })
+        chat = self.collection.find_one(
+            {"chat_id": chat_id},
+            {
+                "chat_id": True,
+                "messages": {
+                    "$elemMatch": {"deleted": False},
+                },
+            },
+        )
 
         if chat:
             return UserData.model_validate(chat).messages
@@ -47,25 +48,18 @@ class Storage:
 
     def delete_chat_history(self, chat_id: int):
         self.collection.update_many(
-        {'chat_id': chat_id}, 
-        {
-            '$set': {'messages.$[].deleted': True} 
-        }
-    )
+            {"chat_id": chat_id}, {"$set": {"messages.$[].deleted": True}}
+        )
 
     def set_language(self, chat_id: int, language: str):
         self.collection.update_many(
-        {'chat_id': chat_id}, 
-        {
-            '$set': {'language': language} 
-        }
-    )
-        
+            {"chat_id": chat_id}, {"$set": {"language": language}}
+        )
+
     def get_language(self, chat_id: int) -> str:
         data = self.collection.find_one(
-        {'chat_id': chat_id}, 
-        {'chat_id': True, 'language': True}
-    )
+            {"chat_id": chat_id}, {"chat_id": True, "language": True}
+        )
         if data:
             return UserData.model_validate(data).language
         else:

@@ -16,4 +16,4 @@ class Message(BaseModel, extra="allow"):
 class UserData(BaseModel, extra="allow"):
     chat_id: int
     messages: List[Message] = []
-    language: str = 'auto'
+    language: str = "auto"

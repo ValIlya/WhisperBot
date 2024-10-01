@@ -13,6 +13,7 @@ pymongo = "^4.9.1"
 python-dotenv = "^1.0.1"
 pydantic = "^2.9.2"
 pywhispercpp = "^1.2.0"
+telegramify-markdown = "^0.1.13"
 
 
 [tool.poetry.group.dev.dependencies]

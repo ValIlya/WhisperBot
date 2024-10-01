@@ -1,9 +1,12 @@
+import io
 import logging
 import os
 import traceback
 
+import telegramify_markdown
 from dotenv import load_dotenv
-from telegram import File, InlineKeyboardButton, InlineKeyboardMarkup, Update, Message as TMessage
+from telegram import File, InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import Message as TMessage
 from telegram.constants import ParseMode
 from telegram.ext import (
     Application,
@@ -52,8 +55,9 @@ async def _answer(message: TMessage, context: ContextTypes.DEFAULT_TYPE):
 
     storage.append_message(message.chat_id, Message(sender=Role.ASSISTANT, text=reply))
 
-    for text in split(reply):
-        await message.reply_text(text=text)
+    converted = telegramify_markdown.markdownify(reply)
+    for text in split(converted):
+        await message.reply_text(text=text, parse_mode="MarkdownV2")
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -63,15 +67,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def get_voice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     new_file: File = await update.message.voice.get_file()
     language = storage.get_language(update.message.chat_id)
-    filename = f"{update.message.voice.file_id}.ogg"
-    await new_file.download_to_drive(filename)
-    text = speech2text.transcribe(filename, language)
+    stream = io.BytesIO(await new_file.download_as_bytearray())
+    text = speech2text.transcribe_stream(stream, language)
 
-    delete = InlineKeyboardButton("Delete", callback_data='delete')
-    question = InlineKeyboardButton("Question", callback_data='question')
+    delete = InlineKeyboardButton("Delete", callback_data="delete")
+    question = InlineKeyboardButton("Question", callback_data="question")
 
     reply_markup = InlineKeyboardMarkup([[delete, question]])
-    
+
     await update.message.reply_text(text, reply_markup=reply_markup)
 
 
@@ -80,7 +83,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     await query.edit_message_reply_markup(reply_markup=None)
-    if query.data == 'delete':
+    if query.data == "delete":
         return
     await _answer(message=query.message, context=context)
 
@@ -112,8 +115,10 @@ async def set_language(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Set language with `/setlanguage en` command")
     language = context.args[0]
     if language not in speech2text.get_available_languages():
-        languages = ', '.join(speech2text.get_available_languages())
-        await update.message.reply_text(f"Language {language} is not supported. Choose one from these: {languages}")
+        languages = ", ".join(speech2text.get_available_languages())
+        await update.message.reply_text(
+            f"Language {language} is not supported. Choose one from these: {languages}"
+        )
     storage.set_language(chat_id, language)
     await update.message.reply_text(f"Language is set to {language}!")
 
@@ -124,7 +129,10 @@ async def post_init(application: Application) -> None:
             ("start", "Starts the bot"),
             ("help", "Helps a lot"),
             ("clearhistory", "Clears chat history and all llm context"),
-            ("setlanguage", f"Sets language, '{UserData(chat_id=0).language}' by default")
+            (
+                "setlanguage",
+                f"Sets language, '{UserData(chat_id=0).language}' by default",
+            ),
         ]
     )
 

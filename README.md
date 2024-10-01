@@ -12,13 +12,20 @@ Run bot via
 startbot
 ```
 
+
+### Development
+```bash
+cat << EOF >> .git/hooks/pre-commit
+ruff check --select I --fix
+ruff format
+EOF
+```
+
+
 ### TODO:
- - markdown support for answers
-   - strip unsupported characters
- - don't save audio to disk
+ - mp3 / youtube video transcription / summarization
  - async 
     - read-write to storage (Motor)
     - llm chat
- - suggests for bot commands
  - tests would be nice
    - how to test telegram api?
