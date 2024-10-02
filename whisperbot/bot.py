@@ -32,7 +32,7 @@ storage = Storage(
     collection=os.getenv("MONGO_COLLECTION"),
 )
 
-client = Chat(token=os.getenv("MISTAL_API_KEY"))
+client = Chat(token=os.getenv("MISTRAL_API_KEY"))
 app = Application.builder().token(os.getenv("TELEGRAM_TOKEN")).build()
 DEVELOPER_CHAT_ID = os.getenv("DEVELOPER_CHAT_ID")
 speech2text = Speech2Text()
