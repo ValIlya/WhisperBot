@@ -3,6 +3,7 @@
 Bot for chatting with LLM
 
 - Install ffmpeg `apt install ffmpeg`
+- Start mongoDB (`mongod` or in a [cloud](https://www.mongodb.com/cloud/atlas))
 - Install python dependencies `poetry install`
 - Create dotenv `.env` file, see [env.template](env.template) `cp env.template .env`
 - Run bot via `startbot`
@@ -23,7 +24,9 @@ EOF
 
 ### TODO:
  - mp3 / youtube video transcription / summarization
- - async 
+ - fix chainging language: save/load audio, transcript audio from storage
+ - show processing status
+ - async
     - read-write to storage (Motor)
     - llm chat
  - tests would be nice

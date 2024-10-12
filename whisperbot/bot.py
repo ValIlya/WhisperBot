@@ -35,7 +35,7 @@ storage = Storage(
 client = Chat(token=os.getenv("MISTRAL_API_KEY"))
 app = Application.builder().token(os.getenv("TELEGRAM_TOKEN")).build()
 DEVELOPER_CHAT_ID = os.getenv("DEVELOPER_CHAT_ID")
-speech2text = Speech2Text()
+speech2text = Speech2Text(model=os.getenv("SPEECH2TEXT_MODEL"))
 
 
 logging.basicConfig(
@@ -64,28 +64,56 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await _answer(message=update.message, context=context)
 
 
-async def get_voice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    new_file: File = await update.message.voice.get_file()
-    language = storage.get_language(update.message.chat_id)
+async def _transcribe(
+    message: TMessage, context: ContextTypes.DEFAULT_TYPE, language: str | None = None
+) -> None:
+    new_file: File = await message.voice.get_file()
     stream = io.BytesIO(await new_file.download_as_bytearray())
-    text = speech2text.transcribe_stream(stream, language)
+    res = speech2text.transcribe(stream, language)
+    text = res.text
 
     delete = InlineKeyboardButton("Delete", callback_data="delete")
     question = InlineKeyboardButton("Question", callback_data="question")
+    lang_buttons = []
+    lang_probs = [
+        (lang, prob) for lang, prob in res.language_probs.items() if prob > 0.01
+    ]
+    lang_probs = sorted(lang_probs, key=lambda lang_prob: lang_prob[1], reverse=True)
+    for lang, prob in lang_probs:
+        lang_buttons.append(
+            InlineKeyboardButton(f"Lang: {lang} ({prob*100:0.1f}%)", callback_data=lang)
+        )
 
-    reply_markup = InlineKeyboardMarkup([[delete, question]])
+    reply_markup = InlineKeyboardMarkup([[delete, question], lang_buttons])
 
-    await update.message.reply_text(text, reply_markup=reply_markup)
+    await message.reply_text(text, reply_markup=reply_markup)
+
+
+async def get_voice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    language = storage.get_language(update.message.chat_id)
+    await _transcribe(message=update.message, context=context, language=language)
 
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+    message = query.message
+    if not isinstance(message, TMessage):
+        return
 
     await query.edit_message_reply_markup(reply_markup=None)
     if query.data == "delete":
         return
-    await _answer(message=query.message, context=context)
+    elif query.data == "question":
+        await _answer(message=query.message, context=context)
+    elif query.data in speech2text.get_available_languages():
+        if message.reply_to_message:
+            storage.set_language(message.chat_id, language=query.data)
+            await _transcribe(
+                message=message.reply_to_message, language=query.data, context=context
+            )
+        else:
+            await message.reply_text("Audio message not found")
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -113,12 +141,14 @@ async def set_language(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat_id
     if len(context.args) != 1:
         await update.message.reply_text("Set language with `/setlanguage en` command")
+        return
     language = context.args[0]
     if language not in speech2text.get_available_languages():
         languages = ", ".join(speech2text.get_available_languages())
         await update.message.reply_text(
             f"Language {language} is not supported. Choose one from these: {languages}"
         )
+        return
     storage.set_language(chat_id, language)
     await update.message.reply_text(f"Language is set to {language}!")
 
