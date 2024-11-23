@@ -24,8 +24,11 @@ EOF
 
 ### TODO:
  - mp3 / youtube video transcription / summarization
+   - yt dlp subtitles
  - fix chainging language: save/load audio, transcript audio from storage
  - show processing status
+ - multi-voice audio, detect speakers
+ - multi-language audio
  - async
     - read-write to storage (Motor)
     - llm chat

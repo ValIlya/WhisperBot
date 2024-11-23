@@ -14,6 +14,8 @@ python-dotenv = "^1.0.1"
 pydantic = "^2.9.2"
 pywhispercpp = "^1.2.0"
 telegramify-markdown = "^0.1.13"
+yt-dlp = "^2024.11.18"
+webvtt-py = "^0.5.1"
 
 
 [tool.poetry.group.dev.dependencies]
